@@ -4,584 +4,743 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>test 00000</title>
+    <!-- Import a fun, readable font for a game feel -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@700&display=swap" rel="stylesheet">
     <style>
-        /* BASE NEO-BRUTALIST STYLES */
+        :root {
+            --sky-top: #1A8FFF;
+            --sky-bottom: #87CEEB;
+            --hill-back: #4CAF50;
+            --hill-front: #66BB6A;
+            --dirt-color: #795548;
+            --sun-color: #FFD700;
+            --plant-stem: #2E7D32;
+            --plant-leaf: #43A047;
+            --ui-font: 'Fredoka One', cursive;
+            --log-font: 'Consolas', 'Courier New', monospace;
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Courier New', Courier, monospace;
             user-select: none;
         }
 
-        body {
-            /* Stark turquoise background */
-            background-color: #40E0D0;
-            /* Hard, unblended grid background */
-            background-image: 
-                linear-gradient(black 2px, transparent 2px),
-                linear-gradient(90deg, black 2px, transparent 2px);
-            background-size: 60px 60px;
-            overflow: hidden; /* Prevent scrolling during drag */
+        body, html {
             width: 100vw;
             height: 100vh;
+            overflow: hidden;
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--sky-top);
+        }
+
+        /* --- VIBRANT WORLD BACKGROUND --- */
+        #world {
             position: relative;
-            color: black;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(to bottom, var(--sky-top) 0%, var(--sky-bottom) 65%);
+            overflow: hidden;
         }
 
-        /* INFO BOARD */
-        #info-board {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            width: calc(100% - 40px);
-            max-width: 600px;
-            background-color: white;
-            border: 6px solid black;
-            box-shadow: 12px 12px 0px black;
-            padding: 20px;
-            z-index: 100;
-            transition: background-color 0.2s;
-        }
-        #info-board.active {
-            background-color: #FFFF00;
-        }
-        #info-board h1 {
-            font-size: 28px;
-            font-weight: 900;
-            text-transform: uppercase;
-            border-bottom: 4px solid black;
-            padding-bottom: 10px;
-            margin-bottom: 10px;
-            letter-spacing: -1px;
-        }
-        #info-board p {
-            font-size: 18px;
-            font-weight: bold;
-            line-height: 1.4;
-        }
-        .formula {
-            display: inline-block;
-            background: black;
-            color: white;
-            padding: 4px 8px;
-            margin: 8px 0;
-            font-size: 20px;
-            font-weight: 900;
-        }
-
-        /* SOIL */
-        #soil {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 15vh;
-            background-color: #FF9900; /* High contrast orange/brown */
-            border-top: 8px solid black;
-            z-index: 10;
-        }
-
-        /* THE PLANT */
-        #plant-container {
+        .hills {
             position: absolute;
             bottom: 15vh;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 200px;
-            height: 300px;
-            z-index: 20;
-            pointer-events: none; /* Let drag events pass through */
+            width: 100%;
+            height: 40vh;
         }
-        /* Plant Wiggle Animation for Active State */
-        @keyframes plantWiggle {
-            0% { transform: translateX(-50%) rotate(0deg); }
-            25% { transform: translateX(-50%) rotate(-2deg); }
-            50% { transform: translateX(-50%) rotate(0deg); }
-            75% { transform: translateX(-50%) rotate(2deg); }
-            100% { transform: translateX(-50%) rotate(0deg); }
+        
+        /* Layered CSS Hills */
+        .hill-back {
+            position: absolute;
+            bottom: -50px;
+            left: -10vw;
+            width: 60vw;
+            height: 35vh;
+            background: var(--hill-back);
+            border-radius: 50% 50% 0 0;
         }
-        .plant-active {
-            animation: plantWiggle 0.5s infinite;
+        .hill-back:nth-child(2) {
+            left: 40vw;
+            width: 70vw;
+            height: 40vh;
+            background: #388E3C;
+        }
+        .hill-front {
+            position: absolute;
+            bottom: -20px;
+            left: -5vw;
+            width: 110vw;
+            height: 25vh;
+            background: var(--hill-front);
+            border-radius: 50% 50% 0 0;
+            box-shadow: inset 0 10px 20px rgba(255,255,255,0.2);
         }
 
-        /* THE SUN */
-        #sun {
+        .dirt {
             position: absolute;
-            top: 40px;
-            right: 40px;
+            bottom: 0;
+            width: 100%;
+            height: 15vh;
+            background: linear-gradient(to bottom, #8D6E63, var(--dirt-color));
+            border-top: 4px solid #5D4037;
+        }
+
+        /* --- GAME TITLE --- */
+        #game-title {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: var(--ui-font);
+            font-size: 3rem;
+            color: white;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.3), 0 0 20px rgba(255,255,255,0.5);
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        /* --- DRAGGABLE ENTITIES --- */
+        .draggable {
+            cursor: grab;
+            position: absolute;
+            touch-action: none; /* Prevent scroll on touch drag */
+        }
+        .draggable:active {
+            cursor: grabbing;
+        }
+
+        /* SUN */
+        .sun-entity {
             width: 120px;
             height: 120px;
-            background-color: #FFF200;
-            border: 6px solid black;
-            border-radius: 50%; /* Circle is geometrically sharp */
-            box-shadow: 10px 10px 0px black;
-            cursor: grab;
-            z-index: 50;
-            touch-action: none; /* Prevent mobile scroll on touch */
+            background: radial-gradient(circle, #FFFDE7 10%, #FFEB3B 40%, #F57F17 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 40px #FFEB3B, inset 0 0 20px #FFF9C4;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 40px;
+            z-index: 50; /* ALWAYS ON TOP OF CLOUDS */
             transition: transform 0.1s;
         }
-        #sun:active {
-            cursor: grabbing;
-            transform: translate(4px, 4px);
-            box-shadow: 6px 6px 0px black;
+        .sun-entity:hover {
+            transform: scale(1.05);
         }
-        /* Sun Glow for active state */
-        @keyframes sunPulse {
-            0% { box-shadow: 10px 10px 0px black, 0 0 0px #FFF200; }
-            50% { box-shadow: 10px 10px 0px black, 0 0 40px #FFF200; }
-            100% { box-shadow: 10px 10px 0px black, 0 0 0px #FFF200; }
-        }
-        .sun-active {
-            animation: sunPulse 1s infinite;
+        .sun-label {
+            font-family: var(--ui-font);
+            color: #E65100;
+            font-size: 1.2rem;
+            text-shadow: 0 2px 4px rgba(255,255,255,0.8);
+            pointer-events: none;
         }
 
-        /* PARTICLES */
-        #particles {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 30;
+        /* CLOUD */
+        .cloud-entity {
+            width: 180px;
+            height: 60px;
+            background: white;
+            border-radius: 50px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1), inset 0 -4px 8px rgba(0,0,0,0.05);
+            z-index: 30; /* BELOW SUN */
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
+        /* Fluffy cloud parts */
+        .cloud-entity::before, .cloud-entity::after {
+            content: "";
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+        }
+        .cloud-entity::before {
+            width: 90px; height: 90px;
+            top: -40px; left: 25px;
+            box-shadow: inset 0px 4px 8px rgba(255,255,255,0.8);
+        }
+        .cloud-entity::after {
+            width: 70px; height: 70px;
+            top: -25px; right: 25px;
+        }
+        .cloud-label {
+            font-family: var(--ui-font);
+            color: #90A4AE;
+            font-size: 1rem;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        /* --- THE PLANT --- */
+        #plant-container {
+            position: absolute;
+            bottom: 5vh;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px;
+            height: 250px;
+            z-index: 20;
+            transition: filter 0.5s ease;
+        }
+        .plant-shadowed {
+            filter: brightness(0.6) saturate(0.8);
+        }
+        
+        .stem {
+            position: absolute;
+            bottom: 0; left: 65px;
+            width: 20px; height: 180px;
+            background: linear-gradient(to right, var(--plant-stem), #4CAF50, var(--plant-stem));
+            border-radius: 10px;
+        }
+        .leaf {
+            position: absolute;
+            width: 70px; height: 35px;
+            background: linear-gradient(135deg, #66BB6A, var(--plant-leaf));
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+            z-index: 21;
+        }
+        .leaf-left {
+            bottom: 80px; left: -5px;
+            border-radius: 35px 0 35px 0;
+            transform: rotate(-20deg);
+        }
+        .leaf-right {
+            bottom: 120px; left: 85px;
+            border-radius: 0 35px 0 35px;
+            transform: rotate(20deg);
+        }
+        .leaf-top {
+            bottom: 170px; left: 40px;
+            width: 50px; height: 50px;
+            border-radius: 50% 50% 0 50%;
+            transform: rotate(45deg);
+        }
+        .roots {
+            position: absolute;
+            bottom: -30px; left: 50px;
+            width: 50px; height: 40px;
+        }
+        .root-line {
+            position: absolute;
+            width: 6px; height: 40px;
+            background: #BCAAA4;
+            border-radius: 3px;
+        }
+        .root-line:nth-child(1) { transform: rotate(20deg); left: 10px; }
+        .root-line:nth-child(2) { transform: rotate(-15deg); left: 30px; }
+        .root-line:nth-child(3) { transform: rotate(40deg); left: 0px; height: 25px; }
+
+        /* --- CANVAS BEAM & PARTICLES --- */
+        #beamCanvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 25; /* Above plant, below clouds */
+        }
+
+        #particle-layer {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 40;
+        }
+
         .particle {
             position: absolute;
-            font-weight: 900;
-            font-size: 16px;
-            padding: 4px 8px;
-            border: 4px solid black;
-            box-shadow: 4px 4px 0px black;
-            opacity: 1;
+            font-family: var(--ui-font);
+            color: white;
+            font-size: 1.2rem;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            opacity: 0;
+            animation: floatUp 3s ease-in forwards;
+        }
+        
+        .particle-glowing {
+            color: #00E676;
+            text-shadow: 0 0 10px #00E676, 0 0 20px white;
         }
 
-        /* Particle Types & Colors */
-        .p-h2o { background-color: #00BFFF; color: white; }
-        .p-co2 { background-color: #A9A9A9; color: white; }
-        .p-o2 { background-color: white; color: black; }
-        .p-glucose { background-color: #FF69B4; color: white; }
-
-        /* Particle Animations */
         @keyframes floatUp {
             0% { transform: translateY(0) scale(0.5); opacity: 0; }
-            20% { transform: translateY(-30px) scale(1.2); opacity: 1; }
-            80% { transform: translateY(-150px) scale(1); opacity: 1; }
-            100% { transform: translateY(-200px) scale(0.8); opacity: 0; }
-        }
-        @keyframes floatInLeft {
-            0% { transform: translateX(0) scale(0.5); opacity: 0; }
-            20% { transform: translateX(50px) scale(1.2); opacity: 1; }
-            80% { transform: translateX(200px) scale(1); opacity: 1; }
-            100% { transform: translateX(250px) scale(0.8); opacity: 0; }
-        }
-        @keyframes floatInRight {
-            0% { transform: translateX(0) scale(0.5); opacity: 0; }
-            20% { transform: translateX(-50px) scale(1.2); opacity: 1; }
-            80% { transform: translateX(-200px) scale(1); opacity: 1; }
-            100% { transform: translateX(-250px) scale(0.8); opacity: 0; }
-        }
-        @keyframes floatAway {
-            0% { transform: translate(0, 0) scale(0.5); opacity: 0; }
-            20% { transform: translate(20px, -40px) scale(1.2); opacity: 1; }
-            80% { transform: translate(60px, -120px) scale(1); opacity: 1; }
-            100% { transform: translate(80px, -160px) scale(0.8); opacity: 0; }
-        }
-        @keyframes dropDown {
-            0% { transform: translateY(0) scale(0.5); opacity: 0; }
-            20% { transform: translateY(20px) scale(1.2); opacity: 1; }
-            80% { transform: translateY(80px) scale(1); opacity: 1; }
-            100% { transform: translateY(100px) scale(0.8); opacity: 0; }
+            20% { opacity: 1; transform: translateY(-20px) scale(1.1); }
+            80% { opacity: 0.8; transform: translateY(-100px) scale(1); }
+            100% { transform: translateY(-150px) scale(0.8); opacity: 0; }
         }
 
-        /* RESPONSIVENESS */
-        @media (max-width: 600px) {
-            #info-board { top: 10px; left: 10px; width: calc(100% - 20px); padding: 15px; }
-            #info-board h1 { font-size: 20px; }
-            #info-board p { font-size: 14px; }
-            .formula { font-size: 14px; }
-            #sun { width: 80px; height: 80px; font-size: 24px; top: 160px; right: 20px;}
-        }
-
-        /* DEBUG TERMINAL */
-        #debug-terminal {
+        /* --- DEBUG CMD MENU (No AI Slop) --- */
+        #debug-cmd {
             position: absolute;
-            bottom: 20px;
+            top: 20px;
             right: 20px;
-            width: 350px;
+            width: 400px;
             height: 250px;
-            background-color: black;
-            color: #00FF00;
-            border: 6px solid black;
-            box-shadow: 8px 8px 0px white;
-            z-index: 1000;
+            background-color: rgba(15, 15, 20, 0.95);
+            border: 2px solid #333;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             display: flex;
             flex-direction: column;
-            font-family: 'Courier New', Courier, monospace;
+            z-index: 1000;
+            font-family: var(--log-font);
+            overflow: hidden;
+            display: none; /* Hidden by default, toggled via key/click */
         }
-        #debug-header {
-            background-color: white;
-            color: black;
-            padding: 8px;
-            font-weight: 900;
+        #debug-cmd.visible {
+            display: flex;
+        }
+
+        #cmd-header {
+            background: linear-gradient(90deg, #2c3e50, #34495e);
+            color: #ecf0f1;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: bold;
             cursor: grab;
-            border-bottom: 4px solid black;
-            font-size: 14px;
-            text-transform: uppercase;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        #debug-header:active {
-            cursor: grabbing;
-        }
-        #debug-content {
+        #cmd-header:active { cursor: grabbing; }
+        #cmd-toggle { cursor: pointer; color: #e74c3c; font-size: 16px; }
+
+        #cmd-body {
             flex-grow: 1;
+            padding: 10px;
             overflow-y: auto;
-            padding: 8px;
-            font-size: 11px;
-            line-height: 1.3;
-            pointer-events: auto;
+            color: #bdc3c7;
+            font-size: 12px;
+            line-height: 1.5;
+            display: flex;
+            flex-direction: column;
         }
-        #debug-content::-webkit-scrollbar {
-            width: 10px;
+        #cmd-log { flex-grow: 1; }
+        
+        .log-line.sys { color: #2ecc71; }
+        .log-line.warn { color: #f1c40f; }
+        .log-line.user { color: #3498db; }
+
+        #cmd-input-wrapper {
+            display: flex;
+            margin-top: 5px;
+            border-top: 1px solid #333;
+            padding-top: 5px;
         }
-        #debug-content::-webkit-scrollbar-track {
-            background: #333; 
+        #cmd-prompt { color: #e67e22; margin-right: 8px; }
+        #cmd-input {
+            background: transparent;
+            border: none;
+            color: #ecf0f1;
+            font-family: var(--log-font);
+            font-size: 12px;
+            flex-grow: 1;
+            outline: none;
         }
-        #debug-content::-webkit-scrollbar-thumb {
-            background: #00FF00; 
+
+        /* Secret Button to open debug menu if no keyboard */
+        #secret-btn {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            width: 30px; height: 30px;
+            background: transparent;
+            border: none;
+            color: rgba(0,0,0,0.1);
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 1000;
         }
+        #secret-btn:hover { color: rgba(255,255,255,0.5); }
     </style>
 </head>
 <body>
 
-    <!-- INFO BOARD -->
-    <div id="info-board">
-        <h1>test 00000</h1>
-        <div id="status-content">
-            <p>test 0000 test env 0000!</p>
+    <div id="world">
+        <!-- Background Scenery -->
+        <div class="hills">
+            <div class="hill-back"></div>
+            <div class="hill-back"></div>
+            <div class="hill-front"></div>
+        </div>
+        <div class="dirt"></div>
+
+        <div id="game-title">test 00000</div>
+
+        <!-- Dynamic Beam Canvas -->
+        <canvas id="beamCanvas"></canvas>
+
+        <!-- The Plant -->
+        <div id="plant-container">
+            <div class="stem"></div>
+            <div class="leaf leaf-left"></div>
+            <div class="leaf leaf-right"></div>
+            <div class="leaf leaf-top"></div>
+            <div class="roots">
+                <div class="root-line"></div>
+                <div class="root-line"></div>
+                <div class="root-line"></div>
+            </div>
+        </div>
+
+        <!-- Entities Container -->
+        <div id="entities-layer">
+            <div id="sun" class="draggable sun-entity" style="left: 15vw; top: 10vh;">
+                <span class="sun-label">0000</span>
+            </div>
+
+            <div class="draggable cloud-entity" style="left: 45vw; top: 25vh;">
+                <span class="cloud-label">test env</span>
+            </div>
+            
+            <div class="draggable cloud-entity" style="left: 70vw; top: 15vh;">
+                <span class="cloud-label">test env</span>
+            </div>
+        </div>
+
+        <!-- Particle Layer -->
+        <div id="particle-layer"></div>
+    </div>
+
+    <!-- Debug Terminal -->
+    <div id="debug-cmd" class="draggable">
+        <div id="cmd-header">
+            <span>DEBUG MENU ONLY</span>
+            <span id="cmd-toggle">✖</span>
+        </div>
+        <div id="cmd-body">
+            <div id="cmd-log"></div>
+            <div id="cmd-input-wrapper">
+                <span id="cmd-prompt">SYS></span>
+                <input type="text" id="cmd-input" autocomplete="off" spellcheck="false" />
+            </div>
         </div>
     </div>
-
-    <!-- DRAGGABLE SUN -->
-    <div id="sun">0000</div>
-
-    <!-- PARTICLES CONTAINER -->
-    <div id="particles"></div>
-
-    <!-- THE PLANT (Geometric Neo-Brutalist SVG) -->
-    <div id="plant-container">
-        <svg width="200" height="300" viewBox="0 0 200 300">
-            <!-- Stem -->
-            <rect x="85" y="100" width="30" height="200" fill="#00FF00" stroke="black" stroke-width="6"/>
-            <!-- Left Leaf -->
-            <polygon points="85,220 10,220 10,140" fill="#00FF00" stroke="black" stroke-width="6" />
-            <line x1="85" y1="220" x2="10" y2="140" stroke="black" stroke-width="6" />
-            <!-- Right Leaf -->
-            <polygon points="115,160 190,160 190,80" fill="#00FF00" stroke="black" stroke-width="6" />
-            <line x1="115" y1="160" x2="190" y2="80" stroke="black" stroke-width="6" />
-            <!-- Top Bud/Leaf -->
-            <polygon points="100,20 50,100 150,100" fill="#00FF00" stroke="black" stroke-width="6" />
-        </svg>
-    </div>
-
-    <!-- SOIL -->
-    <div id="soil"></div>
-
-    <!-- DEBUG TERMINAL OVERLAY -->
-    <div id="debug-terminal">
-        <div id="debug-header">[SYS_DEBUG] term_0000</div>
-        <div id="debug-content"></div>
-    </div>
+    
+    <!-- Secret Toggle for Mobile/Mouse users -->
+    <button id="secret-btn">⚙</button>
 
     <script>
-        const sun = document.getElementById('sun');
+        // --- CORE VARIABLES ---
+        const canvas = document.getElementById('beamCanvas');
+        const ctx = canvas.getContext('2d');
         const plant = document.getElementById('plant-container');
-        const infoBoard = document.getElementById('info-board');
-        const statusContent = document.getElementById('status-content');
-        const particlesContainer = document.getElementById('particles');
+        const entitiesLayer = document.getElementById('entities-layer');
+        const particleLayer = document.getElementById('particle-layer');
         
-        // --- TERMINAL & LOGGING LOGIC --- //
-        const debugTerminal = document.getElementById('debug-terminal');
-        const debugHeader = document.getElementById('debug-header');
-        const debugContent = document.getElementById('debug-content');
+        let isPhotosynthesizing = false;
+        let animationFrameId;
 
-        function techLog(msg) {
-            const time = new Date().toISOString().split('T')[1].slice(0, -1);
-            const formatted = `[${time}] ${msg}`;
-            
-            // Console spam
-            console.log(formatted);
-            
-            // Terminal overlay spam
-            const line = document.createElement('div');
-            line.textContent = formatted;
-            debugContent.appendChild(line);
-            
-            // Prevent DOM bloat by keeping only latest 60 lines
-            if (debugContent.childNodes.length > 60) {
-                debugContent.removeChild(debugContent.firstChild);
-            }
-            // Auto scroll to bottom
-            debugContent.scrollTop = debugContent.scrollHeight;
+        // --- RESIZE CANVAS ---
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // --- DRAG AND DROP SYSTEM ---
+        let draggedElement = null;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+
+        function initDraggable(el) {
+            // Mouse events
+            el.addEventListener('mousedown', startDrag);
+            // Touch events
+            el.addEventListener('touchstart', startDrag, {passive: false});
         }
 
-        // Terminal Dragging State
-        let isTermDragging = false;
-        let termStartX, termStartY, termInitLeft, termInitTop;
-
-        const startTermDrag = (e) => {
-            isTermDragging = true;
-            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-            termStartX = clientX;
-            termStartY = clientY;
-            const rect = debugTerminal.getBoundingClientRect();
-            termInitLeft = rect.left;
-            termInitTop = rect.top;
+        function startDrag(e) {
+            // Prevent dragging if clicking inside the cmd body
+            if(e.target.closest('#cmd-body') && this.id === 'debug-cmd') return;
             
-            debugTerminal.style.right = 'auto';
-            debugTerminal.style.bottom = 'auto';
-            debugTerminal.style.left = termInitLeft + 'px';
-            debugTerminal.style.top = termInitTop + 'px';
-        };
-
-        const onTermDrag = (e) => {
-            if (!isTermDragging) return;
-            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-            debugTerminal.style.left = (termInitLeft + (clientX - termStartX)) + 'px';
-            debugTerminal.style.top = (termInitTop + (clientY - termStartY)) + 'px';
-        };
-
-        const endTermDrag = () => { isTermDragging = false; };
-
-        debugHeader.addEventListener('mousedown', startTermDrag);
-        window.addEventListener('mousemove', onTermDrag);
-        window.addEventListener('mouseup', endTermDrag);
-        debugHeader.addEventListener('touchstart', startTermDrag, { passive: true });
-        window.addEventListener('touchmove', onTermDrag, { passive: true });
-        window.addEventListener('touchend', endTermDrag);
-
-        // Dragging State
-        let isDragging = false;
-        let startX, startY, initialLeft, initialTop;
-        let sunActive = false;
-
-        // Interaction Threshold
-        const ACTIVATION_DISTANCE = 250; 
-        
-        // --- DRAG & DROP LOGIC --- //
-
-        const startDrag = (e) => {
-            isDragging = true;
-            techLog('[INPUT_HW] Pointer down detected. Initiating drag context for Entity_0000.');
-            // Support both mouse and touch
-            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+            e.preventDefault();
+            draggedElement = this;
             
-            startX = clientX;
-            startY = clientY;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
             
-            const rect = sun.getBoundingClientRect();
-            initialLeft = rect.left;
-            initialTop = rect.top;
-
-            // Remove right/top positioning to manage entirely via left/top
-            sun.style.right = 'auto';
-            sun.style.top = initialTop + 'px';
-            sun.style.left = initialLeft + 'px';
-        };
-
-        const onDrag = (e) => {
-            if (!isDragging) return;
-            e.preventDefault(); // Prevent scrolling on touch
-
-            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-
-            const dx = clientX - startX;
-            const dy = clientY - startY;
-
-            let newLeft = initialLeft + dx;
-            let newTop = initialTop + dy;
-
-            // Constrain to screen bounds
-            newLeft = Math.max(0, Math.min(window.innerWidth - sun.offsetWidth, newLeft));
-            newTop = Math.max(0, Math.min(window.innerHeight - sun.offsetHeight, newTop));
-
-            sun.style.left = newLeft + 'px';
-            sun.style.top = newTop + 'px';
-            
-            // Randomly sample log events to prevent completely freezing the thread during rapid drag
-            if (Math.random() > 0.7) {
-                techLog(`[PHYSICS] Entity_0000 spatial coords updated -> X: ${newLeft.toFixed(1)}, Y: ${newTop.toFixed(1)}`);
-            }
-        };
-
-        const endDrag = () => {
-            isDragging = false;
-            techLog('[INPUT_HW] Pointer up detected. Drag context released.');
-        };
-
-        // Mouse Events
-        sun.addEventListener('mousedown', startDrag);
-        window.addEventListener('mousemove', onDrag);
-        window.addEventListener('mouseup', endDrag);
-
-        // Touch Events
-        sun.addEventListener('touchstart', startDrag, { passive: false });
-        window.addEventListener('touchmove', onDrag, { passive: false });
-        window.addEventListener('touchend', endDrag);
-
-
-        // --- GAME LOGIC & PROXIMITY --- //
-
-        function getCenter(element) {
-            const rect = element.getBoundingClientRect();
-            return {
-                x: rect.left + rect.width / 2,
-                y: rect.top + rect.height / 2
-            };
+            const rect = draggedElement.getBoundingClientRect();
+            dragOffsetX = clientX - rect.left;
+            dragOffsetY = clientY - rect.top;
         }
 
-        let particleTimer = 0;
+        function onMove(e) {
+            if (!draggedElement) return;
+            e.preventDefault();
+            
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            let newX = clientX - dragOffsetX;
+            let newY = clientY - dragOffsetY;
+
+            // Keep in bounds
+            newX = Math.max(0, Math.min(window.innerWidth - draggedElement.offsetWidth, newX));
+            newY = Math.max(0, Math.min(window.innerHeight - draggedElement.offsetHeight, newY));
+
+            draggedElement.style.left = `${newX}px`;
+            draggedElement.style.top = `${newY}px`;
+        }
+
+        function onEnd() {
+            draggedElement = null;
+        }
+
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onEnd);
+        window.addEventListener('touchmove', onMove, {passive: false});
+        window.addEventListener('touchend', onEnd);
+
+        // Initialize existing draggables
+        document.querySelectorAll('.draggable').forEach(initDraggable);
+
+
+        // --- PHYSICS & MATH ENGINE ---
+        
+        // Helper: Check if two line segments intersect (p1-p2 and p3-p4)
+        function linesIntersect(x1, y1, x2, y2, x3, y3, x4, y4) {
+            let det, gamma, lambda;
+            det = (x2 - x1) * (y4 - y3) - (x4 - x3) * (y2 - y1);
+            if (det === 0) {
+                return false;
+            } else {
+                lambda = ((y4 - y3) * (x4 - x1) + (x3 - x4) * (y4 - y1)) / det;
+                gamma = ((y1 - y2) * (x4 - x1) + (x2 - x1) * (y4 - y1)) / det;
+                return (0 < lambda && lambda < 1) && (0 < gamma && gamma < 1);
+            }
+        }
+
+        // Helper: Check if line intersects a rectangle (bounding box)
+        function lineIntersectsRect(lx1, ly1, lx2, ly2, rx, ry, rw, rh) {
+            // Check top, bottom, left, right edges of rectangle
+            const top = linesIntersect(lx1, ly1, lx2, ly2, rx, ry, rx+rw, ry);
+            const bottom = linesIntersect(lx1, ly1, lx2, ly2, rx, ry+rh, rx+rw, ry+rh);
+            const left = linesIntersect(lx1, ly1, lx2, ly2, rx, ry, rx, ry+rh);
+            const right = linesIntersect(lx1, ly1, lx2, ly2, rx+rw, ry, rx+rw, ry+rh);
+            return top || bottom || left || right;
+        }
 
         function gameLoop() {
-            // Check distance
-            const sunCenter = getCenter(sun);
-            const plantCenter = getCenter(plant);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Shift plant center up slightly to focus on the leaves
-            plantCenter.y -= 50;
-
-            const dist = Math.hypot(sunCenter.x - plantCenter.x, sunCenter.y - plantCenter.y);
-
-            // Log telemetry periodically
-            if (particleTimer % 15 === 0) {
-                techLog(`[SYS_TICK] Proximity threshold evaluated: distance=${dist.toFixed(2)}`);
+            const sun = document.getElementById('sun');
+            const clouds = document.querySelectorAll('.cloud-entity');
+            
+            if (!sun) {
+                setPhotosynthesisState(false);
+                animationFrameId = requestAnimationFrame(gameLoop);
+                return;
             }
 
-            if (dist < ACTIVATION_DISTANCE) {
-                if (!sunActive) activatePhotosynthesis();
-                
-                // Spawn particles over time while active
-                particleTimer++;
-                if (particleTimer % 30 === 0) spawnParticle('H2O');
-                if (particleTimer % 40 === 0) spawnParticle('CO2');
-                if (particleTimer % 35 === 0) spawnParticle('O2');
-                if (particleTimer % 50 === 0) spawnParticle('GLUCOSE');
-            } else {
-                if (sunActive) deactivatePhotosynthesis();
-            }
-
-            requestAnimationFrame(gameLoop);
-        }
-
-        // --- STATE CHANGES --- //
-
-        function activatePhotosynthesis() {
-            sunActive = true;
-            techLog('[STATE] test env activity boolean changed to TRUE. Triggering subsystem.');
-            infoBoard.classList.add('active');
-            sun.classList.add('sun-active');
-            plant.classList.add('plant-active');
-            statusContent.innerHTML = `
-                <div class="formula">0000 + 0000 + 0000 = 0000 + 0000</div>
-                <p>test 00000 0000!</p>
-                <p>test env 0000 test 00000 0000 test 0000!</p>
-            `;
-        }
-
-        function deactivatePhotosynthesis() {
-            sunActive = false;
-            techLog('[STATE] test env activity boolean changed to FALSE. Halting subsystem.');
-            infoBoard.classList.remove('active');
-            sun.classList.remove('sun-active');
-            plant.classList.remove('plant-active');
-            statusContent.innerHTML = `<p>test 0000 test env 0000!</p>`;
-        }
-
-
-        // --- PARTICLE SYSTEM --- //
-
-        function spawnParticle(type) {
-            const memAddr = '0x' + Math.floor(Math.random() * 0xFFFFFF).toString(16).toUpperCase().padStart(6, '0');
-            techLog(`[MEM_ALLOC] Spawning particle [${type}] at mem_addr ${memAddr}`);
-            
-            const p = document.createElement('div');
-            p.classList.add('particle', `p-${type.toLowerCase()}`);
-            
-            const placeholders = {
-                'H2O': 'test 0000',
-                'CO2': 'test env',
-                'O2': '0000',
-                'GLUCOSE': 'test 00000'
-            };
-            p.innerText = placeholders[type] || '0000';
+            // Calculate centers
+            const sunRect = sun.getBoundingClientRect();
+            const sunCenterX = sunRect.left + (sunRect.width / 2);
+            const sunCenterY = sunRect.top + (sunRect.height / 2);
 
             const plantRect = plant.getBoundingClientRect();
-            const soilRect = document.getElementById('soil').getBoundingClientRect();
-            
-            let animDuration = (Math.random() * 1 + 1.5) + 's'; // 1.5s to 2.5s
-            
-            // Positioning & Animation based on type
-            if (type === 'H2O') {
-                // Starts at soil, moves up
-                const startX = plantRect.left + (Math.random() * plantRect.width);
-                const startY = soilRect.top - 20;
-                p.style.left = startX + 'px';
-                p.style.top = startY + 'px';
-                p.style.animation = `floatUp ${animDuration} linear forwards`;
-            
-            } else if (type === 'CO2') {
-                // Comes from sides towards plant
-                const fromLeft = Math.random() > 0.5;
-                const startY = plantRect.top + (Math.random() * 150);
-                
-                if (fromLeft) {
-                    p.style.left = '-100px';
-                    p.style.top = startY + 'px';
-                    p.style.animation = `floatInLeft ${animDuration} ease-out forwards`;
-                } else {
-                    p.style.left = window.innerWidth + 'px';
-                    p.style.top = startY + 'px';
-                    p.style.animation = `floatInRight ${animDuration} ease-out forwards`;
+            // Target the leaves area of the plant
+            const plantTargetX = plantRect.left + (plantRect.width / 2);
+            const plantTargetY = plantRect.top + 50;
+
+            let isBlocked = false;
+
+            // Check collision with all clouds
+            clouds.forEach(cloud => {
+                const cRect = cloud.getBoundingClientRect();
+                // We add a slight margin tolerance for visual accuracy
+                const margin = 10;
+                if (lineIntersectsRect(
+                    sunCenterX, sunCenterY, plantTargetX, plantTargetY,
+                    cRect.left + margin, cRect.top + margin, 
+                    cRect.width - (margin*2), cRect.height - (margin*2)
+                )) {
+                    isBlocked = true;
                 }
-            
-            } else if (type === 'O2') {
-                // Comes from leaves, floats away
-                const startX = plantRect.left + (Math.random() * plantRect.width);
-                const startY = plantRect.top + 50;
-                p.style.left = startX + 'px';
-                p.style.top = startY + 'px';
-                // Randomize float away direction slightly
-                const dir = Math.random() > 0.5 ? 1 : -1;
-                p.style.animation = `floatAway ${animDuration} ease-out forwards`;
-                // overriding specific transform for direction variance
-                p.style.setProperty('--dir', dir);
-            } else if (type === 'GLUCOSE') {
-                // Drops from stem area
-                const startX = plantRect.left + (plantRect.width / 2) - 20 + (Math.random() * 40);
-                const startY = plantRect.top + 150;
-                p.style.left = startX + 'px';
-                p.style.top = startY + 'px';
-                p.style.animation = `dropDown ${animDuration} ease-in forwards`;
+            });
+
+            if (!isBlocked) {
+                // DRAW SUNBEAM
+                ctx.beginPath();
+                ctx.moveTo(sunCenterX, sunCenterY);
+                ctx.lineTo(plantTargetX, plantTargetY);
+                
+                // Pulsing glow effect
+                const pulse = Math.sin(Date.now() / 200) * 0.2 + 0.8;
+                ctx.strokeStyle = `rgba(255, 235, 59, ${0.7 * pulse})`;
+                ctx.lineWidth = 25;
+                ctx.shadowBlur = 30 * pulse;
+                ctx.shadowColor = '#FFEB3B';
+                ctx.lineCap = 'round';
+                ctx.stroke();
+
+                setPhotosynthesisState(true);
+            } else {
+                setPhotosynthesisState(false);
             }
 
-            particlesContainer.appendChild(p);
-
-            // Cleanup particle after animation finishes
-            p.addEventListener('animationend', () => {
-                p.remove();
-            });
+            animationFrameId = requestAnimationFrame(gameLoop);
         }
+
+        // --- STATE MANAGEMENT & VISUAL FEEDBACK ---
+        
+        function setPhotosynthesisState(active) {
+            if (isPhotosynthesizing === active) return; // No change
+            
+            isPhotosynthesizing = active;
+            
+            if (active) {
+                plant.classList.remove('plant-shadowed');
+                logTerminal('[PHYSICS] Line of sight unblocked. Process test 00000 STARTED.', 'sys');
+            } else {
+                plant.classList.add('plant-shadowed');
+                logTerminal('[PHYSICS] Obstruction detected. Process test 00000 HALTED.', 'warn');
+            }
+        }
+
+        // Particle Spawner
+        setInterval(() => {
+            if (isPhotosynthesizing) {
+                spawnParticle();
+            }
+        }, 600); // Spawn every 600ms if active
+
+        function spawnParticle() {
+            const p = document.createElement('div');
+            p.className = 'particle particle-glowing';
+            p.innerText = 'test 0000';
+            
+            const plantRect = plant.getBoundingClientRect();
+            
+            // Random start position near plant leaves
+            const startX = plantRect.left + (Math.random() * plantRect.width);
+            const startY = plantRect.top + 30;
+            
+            p.style.left = `${startX}px`;
+            p.style.top = `${startY}px`;
+            
+            particleLayer.appendChild(p);
+            
+            // Cleanup after animation (3s)
+            setTimeout(() => {
+                if (p.parentElement) p.remove();
+            }, 3000);
+        }
+
+
+        // --- DEBUG TERMINAL SYSTEM ---
+        
+        const debugCmd = document.getElementById('debug-cmd');
+        const cmdLog = document.getElementById('cmd-log');
+        const cmdInput = document.getElementById('cmd-input');
+        const cmdBody = document.getElementById('cmd-body');
+        const secretBtn = document.getElementById('secret-btn');
+        const cmdToggle = document.getElementById('cmd-toggle');
+
+        function logTerminal(msg, type = 'sys') {
+            const line = document.createElement('div');
+            line.className = `log-line ${type}`;
+            const time = new Date().toLocaleTimeString('en-US', {hour12: false, fractionalSecondDigits: 2});
+            line.innerText = `[${time}] ${msg}`;
+            cmdLog.appendChild(line);
+            
+            // Auto scroll
+            cmdBody.scrollTop = cmdBody.scrollHeight;
+            
+            // Cleanup old logs
+            if (cmdLog.childElementCount > 50) {
+                cmdLog.removeChild(cmdLog.firstChild);
+            }
+        }
+
+        // Toggle Terminal
+        function toggleTerminal() {
+            debugCmd.classList.toggle('visible');
+            if (debugCmd.classList.contains('visible')) {
+                cmdInput.focus();
+            }
+        }
+
+        // Listen for ~ key or secret button click to open terminal
+        window.addEventListener('keydown', (e) => {
+            if (e.key === '`' || e.key === '~') {
+                e.preventDefault();
+                toggleTerminal();
+            }
+        });
+        secretBtn.addEventListener('click', toggleTerminal);
+        cmdToggle.addEventListener('click', toggleTerminal);
+        
+        // Command Execution
+        cmdInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const val = cmdInput.value.trim();
+                cmdInput.value = '';
+                if (val) {
+                    logTerminal(`SYS> ${val}`, 'user');
+                    executeCommand(val);
+                }
+            }
+        });
+
+        function executeCommand(cmd) {
+            switch(cmd) {
+                case '//clear_clouds_async1':
+                    document.querySelectorAll('.cloud-entity').forEach(el => el.remove());
+                    logTerminal('Clouds cleared successfully.', 'sys');
+                    break;
+                case '//summon_cloud_entity1':
+                    const cloud = document.createElement('div');
+                    cloud.className = 'draggable cloud-entity';
+                    cloud.innerHTML = '<span class="cloud-label">test env</span>';
+                    cloud.style.left = `${Math.random() * 60 + 10}vw`;
+                    cloud.style.top = `${Math.random() * 30 + 5}vh`;
+                    entitiesLayer.appendChild(cloud);
+                    initDraggable(cloud);
+                    logTerminal('New cloud entity spawned.', 'sys');
+                    break;
+                case '//summon_sun_entity_1':
+                    // Remove existing sun
+                    const existingSun = document.getElementById('sun');
+                    if (existingSun) existingSun.remove();
+                    
+                    const sun = document.createElement('div');
+                    sun.id = 'sun';
+                    sun.className = 'draggable sun-entity';
+                    sun.innerHTML = '<span class="sun-label">0000</span>';
+                    sun.style.left = '15vw';
+                    sun.style.top = '10vh';
+                    entitiesLayer.appendChild(sun);
+                    initDraggable(sun);
+                    logTerminal('Sun entity summoned/reset.', 'sys');
+                    break;
+                case '//reset':
+                    // Clear all
+                    document.querySelectorAll('.cloud-entity').forEach(el => el.remove());
+                    const eSun = document.getElementById('sun');
+                    if (eSun) eSun.remove();
+                    
+                    // Re-add Defaults
+                    executeCommand('//summon_sun_entity_1');
+                    executeCommand('//summon_cloud_entity1');
+                    executeCommand('//summon_cloud_entity1');
+                    logTerminal('Environment reset to factory defaults.', 'sys');
+                    break;
+                default:
+                    logTerminal(`ERR: Unknown command. Allowed: //clear_clouds_async1, //summon_cloud_entity1, //summon_sun_entity_1, //reset`, 'warn');
+                    break;
+            }
+        }
+
+        // Initial Boot sequence log
+        logTerminal('SYS BOOT v2.5... OK', 'sys');
+        logTerminal('Loading Physics Engine... OK', 'sys');
+        logTerminal('Listening for interactions.', 'sys');
 
         // Start Loop
         requestAnimationFrame(gameLoop);
-        techLog('[SYS_BOOT] term_0000 initialized. Listening for hardware inputs.');
 
     </script>
 </body>
